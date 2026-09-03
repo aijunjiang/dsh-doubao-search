@@ -33,7 +33,7 @@ Give [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) a
 
 ```bash
 dsh plugin --profile web add ./dsh-plugin-doubao-search
-# or from GitHub: dsh plugin --profile web add github:you/your-repo
+# or from GitHub: dsh plugin --profile web add github:aijunjiang/dsh-doubao-search
 ```
 
 `dsh plugin` installs the package into the profile and registers it automatically. **Restart dsh once** — bundle layers are assembled at startup.

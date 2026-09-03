@@ -33,7 +33,7 @@
 
 ```bash
 dsh plugin --profile web add ./dsh-plugin-doubao-search
-# 或从 GitHub 装：dsh plugin --profile web add github:你的名字/你的仓库
+# 或从 GitHub 装：dsh plugin --profile web add github:aijunjiang/dsh-doubao-search
 ```
 
 `dsh plugin` 会把包装进 profile 并自动登记。**重启一次 dsh 后生效**（bundle 层启动时组装）。
