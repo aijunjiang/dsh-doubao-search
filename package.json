@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-doubao-search",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "豆包搜索（火山引擎 联网搜索/Web Search API）DSH 插件：全局 doubao_search 模型工具 + Web「设置-插件」配置卡片，API Key 经设置命名空间/环境变量配置，跨平台即装即用",
   "type": "module",
   "main": "index.js",
@@ -38,6 +38,7 @@
     "client": {
       "platform": "web",
       "inject": [
+        "@deepseek-ai/dsh-client-locale",
         "@deepseek-ai/dsh-client-ui-renderer",
         "@deepseek-ai/dsh-client-ui-settings"
       ]

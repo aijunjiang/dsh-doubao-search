@@ -1,5 +1,7 @@
 # dsh-plugin-doubao-search
 
+> **[English](./README.en.md) · 中文**
+
 给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）装上「**豆包搜索**」（火山引擎联网搜索 / Web Search API）：安装后，你的 Agent 就多了一把联网搜索的钥匙，可以帮你检索最新事实、核对信息出处，并把带来源链接的结果整理回来给你看。
 
 > 面向**使用者**的引导在前；面向**开发者**的打包/架构细节在文末独立成章，按需阅读即可。
@@ -9,7 +11,8 @@
 ## 一、装完你能得到什么
 
 - 🔍 一个全局模型工具 **`doubao_search`**：网页搜索 + 图片搜索，返回 **标题、来源站点、URL、摘要、权威度、发布时间**，需要时还能取回正文 —— 每条结果都带原文链接，方便你点开核对。
-- 🎛️ 配置零命令行：在 **DSH 设置 → 插件 → 插件配置** 里有一张「豆包搜索」卡片，填一次 Key 就能用；卡片会折叠、会显示当前是**已配置 / 未配置**。
+- 🎛️ 配置零命令行：在 **DSH 设置 → 插件 → 插件配置** 里有一张「豆包搜索」卡片，填一次 Key 就能用；卡片外观与官方设置卡片一致，支持折叠，并会显示当前是**已配置 / 未配置**。
+- 🌐 多语言：卡片文案跟随 DSH 界面语言自动切换（**中文 / English**），与 DSH 其它设置一致。
 - 💻 跨平台：Windows / macOS / Linux 都能跑（插件直接用 Node 内置网络能力，不依赖 PowerShell / shell）。
 - ⚡ 宿主工具**即装即生效**（web profile 支持热加载，不用重启）；浏览器配置卡片在重启或刷新后出现。
 - 📌 结果侧重**时效性与出处**：适合查新闻、版本发布、行情/政策更新，或核实某个说法。
@@ -121,7 +124,7 @@ dsh web
 | `index.js` | **宿主半**：Cordis 插件（导出 `name / inject / Config / apply`）；注册全局工具 + 设置命名空间 |
 | `client.js` | **浏览器半**：手工产出的客户端模块产物（`window.__ModuleLoader__.load` 闭包工厂），注册「设置→插件」配置卡片 |
 | `cordis.patch.yml` | 分发用的 bundle 补丁层（`- insert` 声明插件行） |
-| `README.md` | 本文档 |
+| `README.md` / `README.en.md` | 本文档（中文）与英文版 |
 
 ### 宿主半做了什么
 
@@ -137,9 +140,10 @@ dsh web
 ### 浏览器半（配置卡片）如何工作
 
 - 产物格式为客户端模块系统的**闭包工厂**：`window.__ModuleLoader__.load({ id, factory })`，factory 内仅通过注入的 `require` 取平台种子（`react`），其余代码全部内联 —— 因此不依赖任何第三方客户端包，规避客户端 bundle 纯度门槛，且无需仓库内构建工具即可维护。
-- 通过 `ctx.slots.register({ name: 'settings.plugin.item', key: 'doubao-search' }, Card)` 注册卡片，与宿主注册的命名空间**自动配对**（官方支持的第三方卡片机制）。
+- 通过 `ctx.slots.register({ name: 'settings.plugin.item', key: 'doubao-search' }, Card)` 注册卡片，与宿主注册的命名空间**自动配对**（官方支持的第三方卡片机制）；卡片外壳（名称/描述表头、unsaved 胶囊、放弃/保存、保存后收起）与官方设置卡片使用同一套 `--dsw-alias-*` 主题 token，观感一致。
+- 文案 i18n：注册 `settings.doubaoSearch` 字典（`ctx.locale.register`），订阅 locale 快照（`active/revision`），界面语言切换时自动在中文/English 间切换，无需重启。
 - 密钥走**凭据域**而非设置文档（对齐官方 `WebSearchCard` 模式）：`ctx.remote.credentials.describe/set/unset`，页面只展示 configured/writable 布尔状态，密钥字面量永不回显。
-- 运行时注入服务：`slots`、`settingsScope`、`remote`、`remote.credentials`。
+- 运行时注入服务：`slots`、`settingsScope`、`locale`、`remote`、`remote.credentials`。
 
 ### API 对接（豆包搜索 Custom 版）
 
