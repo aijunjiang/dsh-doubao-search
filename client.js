@@ -254,9 +254,12 @@ window.__ModuleLoader__.load({
       )
     }
 
-    /* ================= 宿主接线（i18n + settingsScope + 凭据） ================= */
+    /* ================= 宿主接线（i18n + configForms + 凭据） ================= */
     function apply(ctx) {
-      var scope = ctx.settingsScope.bind({ namespace: NS })
+      // DSH 0.2.x：settingsScope 服务已由 configForms 取代。
+      // 0.1.x 的 ctx.settingsScope.bind({ namespace }) → 0.2.x 的 ctx.configForms.get(namespace)
+      // 返回的 ConfigForm<T> 与原 SettingsScope<T> 的 getSnapshot/subscribe/mutate/set/unset 签名一致。
+      var scope = ctx.configForms.get(NS)
       var locale = ctx.get('locale')
       var activeLocale = 'zh'
       if (locale && typeof locale.getSnapshot === 'function') {
@@ -397,10 +400,37 @@ window.__ModuleLoader__.load({
         },
       }
 
-      ctx.slots.inject('settings.plugin.item', function* registerCard() {
+      // DSH 0.2.x：settings.plugin.item（单卡片）槽位已移除，
+      // 改为在「设置 → 插件」分区里贡献一个标签页：settings.plugins.tab（list 类型）。
+      // list 类型要求 id，可选 order（标签顺序）与 label（本地化标签，thunk 随语言重算）。
+      ctx.slots.inject('settings.plugins.tab', function* registerCard() {
         yield ctx.slots.register({
-          name: 'settings.plugin.item',
-          key: NS,
+          name: 'settings.plugins.tab',
+          id: NS,
+          order: 30,
+          label: function () { return strings().title || 'Doubao Search' },
+          locale: LNS,
+          inject: function () {
+            return {
+              hooks: { doubaoCard: store },
+              saveKey: saveKey,
+              clearKey: clearKey,
+              refreshCredential: refreshCredential,
+            }
+          },
+        }, DoubaoCard)
+      })
+
+      // ── 侧栏插件页的配置入口（DSH 0.2.x）────────────────────────────────
+      // plugins.bundle.config 是 keyed 槽位，key = bundle 的 **包名**（不是行 id），
+      // 渲染在包详情页里、详情文档之后、行列表之前。
+      // 注意错位：卡片 key 用包名，而表单命名空间是行 id —— 上面的
+      // ctx.configForms.get(NS) 里 NS='doubao-search' 正是行 id，取法正确。
+      // 页面只传 view:'page'，不传 form，配置值由本插件自己从 configForms 取。
+      ctx.slots.inject('plugins.bundle.config', function* registerBundleConfig() {
+        yield ctx.slots.register({
+          name: 'plugins.bundle.config',
+          key: 'dsh-plugin-doubao-search',
           locale: LNS,
           inject: function () {
             return {
@@ -414,7 +444,7 @@ window.__ModuleLoader__.load({
       })
     }
 
-    exports.inject = ['slots', 'settingsScope', 'locale', 'remote', 'remote.credentials']
+    exports.inject = ['slots', 'configForms', 'locale', 'remote', 'remote.credentials']
     exports.apply = apply
     return module.exports
   },
