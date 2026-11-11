@@ -10,7 +10,7 @@ import z from '@deepseek-ai/schemastery'
 export const name = 'doubao-search'
 
 /** 需要注入的服务：tools=注册工具，settings=注册配置命名空间。 */
-export const inject = ['tools', 'settings']
+export const inject = ['tools']
 
 /** 设置命名空间（Web「设置 → 插件」将来的配置卡片按此 key 配对）。 */
 export const DOUBAO_NS = 'doubao-search'
@@ -21,12 +21,15 @@ const DEFAULT_KEY_ENV = 'DOUBAO_API_KEY'
 const DEFAULT_COUNT = 10
 const DEFAULT_TIMEOUT_MS = 30000
 
-/** 行级默认配置（可被命名空间用户层逐字段覆盖）。 */
+/** 行级默认配置（可被命名空间用户层逐字段覆盖）。
+ * DSH 0.2.x：字段必须标记 `.volatile()` 才会生成设置表单
+ * （settings 包用 isVolatile 判断哪些字段可在不重挂载的情况下编辑）。
+ * 0.1.x 靠 ctx.settings.installSection 手动登记，0.2.x 已移除该 API。 */
 export const Config = z.object({
-  apiKey: z.string().role('secret'),
-  apiKeyEnv: z.string().role('credential-ref').default(DEFAULT_KEY_ENV),
-  defaultCount: z.number().step(1).min(1).max(50).default(DEFAULT_COUNT),
-  timeoutMs: z.number().min(1000).max(120000).default(DEFAULT_TIMEOUT_MS),
+  apiKey: z.string().role('secret').volatile(),
+  apiKeyEnv: z.string().role('credential-ref').default(DEFAULT_KEY_ENV).volatile(),
+  defaultCount: z.number().step(1).min(1).max(50).default(DEFAULT_COUNT).volatile(),
+  timeoutMs: z.number().min(1000).max(120000).default(DEFAULT_TIMEOUT_MS).volatile(),
 })
 
 function withDefaults(config) {
@@ -183,15 +186,23 @@ function readHttpError(error) {
 }
 
 export function apply(ctx, entry) {
-  let current = () => withDefaults(entry)
-  ctx.inject(['settings'], (settingsCtx) => {
-    settingsCtx.settings.installSection(ctx, DOUBAO_NS, Config, withDefaults(entry), {
-      setSource(source) {
-        current = () => withDefaults(source())
-      },
-      onChange() {},
-    })
-  })
+  // DSH 0.2.x：ctx.settings.installSection 已移除。volatile 字段由框架直接注入
+  // 为 config.<field> 的取值句柄，用 .get() 读当前值；配置表单由 settings 包
+  // 按 entry.id 自动生成并挂到侧栏插件页，无需手动登记。
+  const read = (value, fallback) => {
+    if (value === undefined || value === null) return fallback
+    // volatile 字段是取值句柄（含 get()），普通值直接用
+    if (typeof value === 'object' && typeof value.get === 'function') return value.get()
+    return value
+  }
+  let current = () => withDefaults(
+    entry === undefined ? {} : {
+      apiKey: read(entry.apiKey, ''),
+      apiKeyEnv: read(entry.apiKeyEnv, ''),
+      defaultCount: read(entry.defaultCount, undefined),
+      timeoutMs: read(entry.timeoutMs, undefined),
+    },
+  )
 
   /** 解析本轮调用使用的 API Key。 */
   async function resolveKey() {

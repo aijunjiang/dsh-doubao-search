@@ -140,10 +140,11 @@ dsh web
 ### 浏览器半（配置卡片）如何工作
 
 - 产物格式为客户端模块系统的**闭包工厂**：`window.__ModuleLoader__.load({ id, factory })`，factory 内仅通过注入的 `require` 取平台种子（`react`），其余代码全部内联 —— 因此不依赖任何第三方客户端包，规避客户端 bundle 纯度门槛，且无需仓库内构建工具即可维护。
-- 通过 `ctx.slots.register({ name: 'settings.plugin.item', key: 'doubao-search' }, Card)` 注册卡片，与宿主注册的命名空间**自动配对**（官方支持的第三方卡片机制）；卡片外壳（名称/描述表头、unsaved 胶囊、放弃/保存、保存后收起）与官方设置卡片使用同一套 `--dsw-alias-*` 主题 token，观感一致。
+- 通过 `ctx.slots.register({ name: 'plugins.bundle.config', key: 'dsh-plugin-doubao-search' }, Card)` 把配置页挂到**插件页的包详情**里（DSH 0.2.x 机制）。注意两个 key 不一致：槽位按**包名**、表单按**入口 id**（`doubao-search`），写错任一个都会静默失效；卡片外壳（名称/描述表头、unsaved 胶囊、放弃/保存、保存后收起）与官方设置页使用同一套 `--dsw-alias-*` 主题 token，观感一致。
 - 文案 i18n：注册 `settings.doubaoSearch` 字典（`ctx.locale.register`），订阅 locale 快照（`active/revision`），界面语言切换时自动在中文/English 间切换，无需重启。
 - 密钥走**凭据域**而非设置文档（对齐官方 `WebSearchCard` 模式）：`ctx.remote.credentials.describe/set/unset`，页面只展示 configured/writable 布尔状态，密钥字面量永不回显。
-- 运行时注入服务：`slots`、`settingsScope`、`locale`、`remote`、`remote.credentials`。
+- 运行时注入服务：`slots`、`configForms`（0.1.x 的 `settingsScope` 已在 0.2.x 改名）、`locale`、`remote`、`remote.credentials`。
+- 配置表单由宿主按入口的 `Config` 派生，因此**每个字段都必须标 `.volatile()`**——不标记的字段不会出现在表单里，且没有任何报错。
 
 ### API 对接（豆包搜索 Custom 版）
 
