@@ -140,10 +140,11 @@ A standard **DSH plugin package (bundle)** with two halves in one repository:
 ### How the browser half (config card) works
 
 - Artifact format: the client module system's **closure factory** — `window.__ModuleLoader__.load({ id, factory })`; the factory only takes platform seeds (`react`) through the injected `require`, everything else is inlined, so no third-party client package is needed and no in-repo build tooling is required to maintain it.
-- Registered via `ctx.slots.register({ name: 'settings.plugin.item', key: 'doubao-search' }, Card)` and **auto-paired** with the host-registered namespace (the officially supported third-party card mechanism). The card chrome (name/description header, unsaved pill, Discard/Save, collapse-after-save) shares the official `--dsw-alias-*` theme tokens, so it looks native.
+- Registered via `ctx.slots.register({ name: 'plugins.bundle.config', key: 'dsh-plugin-doubao-search' }, Card)`, which mounts the configuration on the bundle's own page in the Plugins view (the DSH 0.2.x mechanism). The two keys deliberately differ: the slot is keyed by PACKAGE name, the form by ENTRY id (`doubao-search`); either one spelled wrong fails silently. The card chrome (name/description header, unsaved pill, Discard/Save, collapse-after-save) shares the official `--dsw-alias-*` theme tokens, so it looks native.
 - i18n: registers a `settings.doubaoSearch` dictionary (`ctx.locale.register`) and subscribes to locale snapshots (`active`/`revision`) — copy switches between Chinese and English with the DSH UI language, no restart.
 - Keys go through the **credentials domain**, not the settings document (same pattern as the official `WebSearchCard`): `ctx.remote.credentials.describe/set/unset`; the page only sees `configured`/`writable` booleans, never the key itself.
-- Injected services at runtime: `slots`, `settingsScope`, `locale`, `remote`, `remote.credentials`.
+- Injected services at runtime: `slots`, `configForms` (the 0.1.x `settingsScope`, renamed in 0.2.x), `locale`, `remote`, `remote.credentials`.
+- The host derives the configuration form from the entry's `Config`, so **every field must be marked `.volatile()`** — an unmarked field simply does not appear, with no error.
 
 ### API integration (Doubao Search Custom)
 
